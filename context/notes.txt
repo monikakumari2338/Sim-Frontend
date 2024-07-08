@@ -1,0 +1,44 @@
+Common Data Fields for DSD and IA
+
+DSD/IA
+{
+	id -> random
+	status -> complete, in progress
+	date -> random
+	items[] -> IA items
+	units -> sum(item.qty for item in items)
+	proofImages -> []
+}
+
+Unique Data Fields for IA and DSD
+
+IA
+{
+	reason -> stock in, stock out, theft, damaged
+}
+
+DSD
+{
+	supplierId -> 5 character unique code with name
+	poId -> random
+	invoiceId -> random (numeric only)
+}
+
+Common Data Map for IA Item and DSD Item
+
+DSD/IA Item
+{
+	id -> random but different from prev in length
+	info{} -> id, name, color, size, image
+	qty -> random
+	proofImages -> []
+}
+
+No Unique data fiel	ds for IA Item and DSD Item
+
+Static Data {
+STATUS,
+IA: REASON,
+SUPPLIER_DATA,
+ITEM_DATA -> NAME, COLOR, SIZE, IMAGE
+}
