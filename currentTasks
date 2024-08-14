@@ -1,0 +1,10 @@
+FILTER
+
+1. Navigation for FilterBottomSheet
+2. 'filterParams' parameter addition and useEffect
+3. Filter date range selection
+
+EMAIL / SAVE AS PDF
+
+1. Generate a PDF document for the Adjustment Summary
+2. Email the receipt or Save the receipt
