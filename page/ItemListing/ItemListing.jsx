@@ -19,11 +19,13 @@ import Toast from "react-native-toast-message";
 import * as ImagePicker from "expo-image-picker";
 import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system";
-import XLSX from "xlsx";
+import * as XLSX from "xlsx";
 import uploadImage from "../../assets/uploadImage.png";
 import { endpoints } from "../../context/endpoints";
 import { useIsFocused } from "@react-navigation/native";
 import { AsnCard2 } from "../../modules/PurchaseOrder/AsnCard";
+import axios from "axios";
+import { token } from "../../context/auth";
 
 export default function EntryItemDetailPage({ route }) {
   const { entryItem } = route.params;
@@ -146,7 +148,7 @@ export default function EntryItemDetailPage({ route }) {
               />
 
               {status !== "Complete" &&
-                status != "Dispatched" &&
+                status !== "Dispatched" &&
                 type !== "PO" && (
                   <ButtonGroup
                     {...{
@@ -750,46 +752,107 @@ function MyFabGroup({
     setState({ open });
   }
 
+  const selectFile = async () => {
+    // Opening Document Picker to select one file
+    try {
+      const res = await DocumentPicker.pick({
+        // Provide which type of file you want user to pick
+        type: [DocumentPicker.types.allFiles],
+        // There can me more options as well
+        // DocumentPicker.types.allFiles
+        // DocumentPicker.types.images
+        // DocumentPicker.types.plainText
+        // DocumentPicker.types.audio
+        // DocumentPicker.types.pdf
+      });
+      // Printing the log realted to the file
+      console.log("res : " + JSON.stringify(res));
+      // Setting the state to show single file attributes
+      // setSingleFile(res);
+    } catch (err) {
+      // setSingleFile(null);
+      // Handling any exception (If any)
+      if (DocumentPicker.isCancel(err)) {
+        // If user canceled the document selection
+        alert("Canceled");
+      } else {
+        // For Unknown Error
+        alert("Unknown Error: " + JSON.stringify(err));
+        throw err;
+      }
+    }
+  };
   async function handleRtvExcelUpload() {
     try {
       console.log("Opening document picker...");
 
       const res = await DocumentPicker.getDocumentAsync({
-        type: [DocumentPicker.types.xlsx],
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       });
 
-      console.log("response file : " + res[0]);
       if (!res.canceled && res.assets && res.assets.length > 0) {
-        const fileToUpload = {
-          uri: res[0].uri,
-          name: res[0].name,
-          type: res[0].type,
-        };
+        const fileUri = res.assets[0].uri;
 
-        const uploadResponse = await axios.post(
-          "sim/excelUpload/",
-          {
-            file: fileToUpload,
-            fileName: "ReturnToVendor",
-          },
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-            },
+        // Read the file as a base64 string
+        const fileContent = await FileSystem.readAsStringAsync(fileUri, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+
+        // Parse the file using XLSX
+        const wb = XLSX.read(fileContent, {
+          type: "base64",
+          cellDates: true,
+        });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const data = XLSX.utils.sheet_to_json(ws);
+
+        const items = [];
+        const errors = [];
+
+        for (const [index, item] of data.entries()) {
+          // Data validation
+          if (!item.SKU || !item.Quantity) {
+            errors.push(`Row ${index + 1}: Missing item SKU or quantity.`);
+            continue;
           }
-        );
-        if (uploadResponse.status === 200) {
-          console.log("Response from the second API:", response.data);
-          // If the upload is successful, call the second API to get the response
-          // const response = await axios.get("YOUR_FETCH_RESPONSE_API_ENDPOINT");
-          // if (response.status === 200) {
-          //   console.log("Response from the second API:", response.data);
-          //   return response.data;
-          // } else {
-          //   console.error("Failed to fetch response:", response.status);
-          // }
-        } else {
-          console.error("Failed to upload file:", uploadResponse.status);
+          if (!item.SKU.startsWith("sku")) {
+            errors.push(`Row ${index + 1}: Item ID must start with "sku".`);
+            continue;
+          }
+          if (item.Quantity <= 0) {
+            errors.push(`Row ${index + 1}: Quantity must be greater than 0.`);
+            continue;
+          }
+
+          try {
+            const response = await getData(
+              `/dsd/get/supplier/product/${tempSupplier}/${item.SKU}/${storeName}`
+            );
+            console.log("response :", response);
+            const foundItem = response.items ? response.items[0] : null;
+
+            if (!foundItem) {
+              errors.push(`Row ${index + 1}: Item not found.`);
+              continue;
+            } else if (response.items) {
+            }
+
+            // if item already exists, update the quantity
+            // else push the item to the tempItems with
+
+            const existingItem = tempItems.find((i) => i.sku === foundItem.sku);
+            if (existingItem) {
+              existingItem.qty += item.Quantity;
+            } else {
+              items.push({
+                ...foundItem,
+                qty: item.Quantity,
+              });
+            }
+          } catch (e) {
+            errors.push(`Row ${index + 1}: Error fetching item.`);
+            continue;
+          }
         }
 
         // If errors exist, console.log and return

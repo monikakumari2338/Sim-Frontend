@@ -9,11 +9,12 @@ const userName = "Monika";
 const password = "abc123";
 const showToken = true;
 const prettify = false;
+var token;
 
 // Function to retrieve the token
 async function getToken() {
   try {
-    let token = await AsyncStorage.getItem("token");
+    token = await AsyncStorage.getItem("token");
     if (!token) {
       const { accessToken } = await handleLogin();
       token = accessToken;
@@ -174,6 +175,7 @@ export {
   email,
   userName,
   password,
+  token,
 };
 
 // Automatically authenticate on application startup
