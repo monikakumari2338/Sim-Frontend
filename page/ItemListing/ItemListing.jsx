@@ -44,29 +44,29 @@ export default function EntryItemDetailPage({ route }) {
   }
   // fetch the items, reason, supplier and other details for IA and DSD
   async function getItemsReasonSupplier() {
-    if (status !== "In Progress") {
-      if (type === "IA") {
-        const response = await getData(endpoints.fetchItemsIA + entryItem.id);
-        setTempItems(response.items);
-        setTempReason(response.reason);
-        console.log("REASON:", response.reason);
-      } else if (type === "DSD") {
-        const response = await getData(endpoints.fetchItemsDSD + entryItem.id);
-        setTempItems(response.items);
-        setTempSupplier(response.supplierId);
-        console.log("SUPPLIER:", response.supplierId);
-      } else if (type === "RTV") {
-        const response = await getData(
-          endpoints.fetchItemsRTV + `${entryItem.id}/${storeName}`
-        );
+    //if (status !== "In Progress") {
+    if (type === "IA") {
+      const response = await getData(endpoints.fetchItemsIA + entryItem.id);
+      setTempItems(response.items);
+      setTempReason(response.reason);
+      console.log("REASON:", response.reason);
+    } else if (type === "DSD") {
+      const response = await getData(endpoints.fetchItemsDSD + entryItem.id);
+      setTempItems(response.items);
+      setTempSupplier(response.supplierId);
+      console.log("SUPPLIER:", response.supplierId);
+    } else if (type === "RTV") {
+      const response = await getData(
+        endpoints.fetchItemsRTV + `${entryItem.id}/${storeName}`
+      );
 
-        setTempItems(response.items);
-        setTempReason(response.reason);
-        setTempSupplier(response.supplierId);
-        console.log("REASON:", response.reason);
-        console.log("SUPPLIER:", response.supplierId);
-      }
+      setTempItems(response.items);
+      setTempReason(response.reason);
+      setTempSupplier(response.supplierId);
+      console.log("REASON:", response.reason);
+      console.log("SUPPLIER:", response.supplierId);
     }
+    // }
   }
   // fetch items that are under an ASN
   async function getASNItems() {
@@ -95,10 +95,7 @@ export default function EntryItemDetailPage({ route }) {
 
   // Show overlay for reason or supplier based on the fetched data
   const [reasonsOverlay, setReasonsOverlay] = useState(
-    isFocused &&
-      (type === "IA" || type === "RTV") &&
-      !entryItem.reason &&
-      !tempReason
+    isFocused && type === "IA" && !entryItem.reason && !tempReason
   );
   const [supplierOverlay, setSupplierOverlay] = useState(
     isFocused &&
@@ -177,9 +174,11 @@ export default function EntryItemDetailPage({ route }) {
 
               <SupplierOverlay
                 {...{
+                  type,
                   setTempSupplier,
                   supplierOverlay,
                   setSupplierOverlay,
+                  setReasonsOverlay,
                 }}
               />
             </>
@@ -515,9 +514,11 @@ function ReasonsOverlay({
 }
 
 function SupplierOverlay({
+  type,
   setTempSupplier,
   supplierOverlay,
   setSupplierOverlay,
+  setReasonsOverlay,
 }) {
   // States and vars
   const [suggestions, setSuggestions] = useState([]);
@@ -612,6 +613,9 @@ function SupplierOverlay({
             onPress={() => {
               setTempSupplier(item.id);
               setSupplierOverlay(false);
+              {
+                type === "RTV" ? setReasonsOverlay(true) : null;
+              }
             }}
           />
         )}
