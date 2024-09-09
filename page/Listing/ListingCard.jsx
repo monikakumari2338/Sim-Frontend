@@ -1,6 +1,6 @@
 import { Divider, Icon } from "@rneui/themed";
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View, Alert } from "react-native";
 import { Pressable } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { handleDelete } from "../../context/functions";
@@ -78,7 +78,23 @@ export default function ListingCard({ item, foo }) {
     );
   }
   async function deleteEntry(itemId, type) {
-    await handleDelete(itemId, type);
+    Alert.alert(
+      "Delete Confirmation",
+      "Are you sure you want to delete?",
+      [
+        // {
+        //   text: 'Cancel',
+        //   onPress: () => console.log('Cancel Pressed'),
+        //   style: 'cancel', // Makes the button look different
+        // },
+        {
+          text: "OK",
+          onPress: () => handleDelete(itemId, type),
+        },
+      ]
+      //{ cancelable: true }
+    );
+
     foo();
   }
 

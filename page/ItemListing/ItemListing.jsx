@@ -44,29 +44,29 @@ export default function EntryItemDetailPage({ route }) {
   }
   // fetch the items, reason, supplier and other details for IA and DSD
   async function getItemsReasonSupplier() {
-    //if (status !== "In Progress") {
-    if (type === "IA") {
-      const response = await getData(endpoints.fetchItemsIA + entryItem.id);
-      setTempItems(response.items);
-      setTempReason(response.reason);
-      console.log("REASON:", response.reason);
-    } else if (type === "DSD") {
-      const response = await getData(endpoints.fetchItemsDSD + entryItem.id);
-      setTempItems(response.items);
-      setTempSupplier(response.supplierId);
-      console.log("SUPPLIER:", response.supplierId);
-    } else if (type === "RTV") {
-      const response = await getData(
-        endpoints.fetchItemsRTV + `${entryItem.id}/${storeName}`
-      );
+    if (status !== "In Progress") {
+      if (type === "IA") {
+        const response = await getData(endpoints.fetchItemsIA + entryItem.id);
+        setTempItems(response.items);
+        setTempReason(response.reason);
+        console.log("REASON:", response.reason);
+      } else if (type === "DSD") {
+        const response = await getData(endpoints.fetchItemsDSD + entryItem.id);
+        setTempItems(response.items);
+        setTempSupplier(response.supplierId);
+        console.log("SUPPLIER:", response.supplierId);
+      } else if (type === "RTV") {
+        const response = await getData(
+          endpoints.fetchItemsRTV + `${entryItem.id}/${storeName}`
+        );
 
-      setTempItems(response.items);
-      setTempReason(response.reason);
-      setTempSupplier(response.supplierId);
-      console.log("REASON:", response.reason);
-      console.log("SUPPLIER:", response.supplierId);
+        setTempItems(response.items);
+        setTempReason(response.reason);
+        setTempSupplier(response.supplierId);
+        console.log("REASON:", response.reason);
+        console.log("SUPPLIER:", response.supplierId);
+      }
     }
-    // }
   }
   // fetch items that are under an ASN
   async function getASNItems() {
@@ -664,6 +664,23 @@ function ProofOverlay({
       setImage(result.uri);
     }
   }
+
+  async function handleRTVSubmit() {
+    const data = {
+      id: entryItem.id,
+      totalSku: tempItems.reduce((acc, item) => acc + Number(item.qty), 0),
+      status: "Complete",
+      items: tempItems,
+      imageData: image,
+      reason: tempReason,
+      supplierId: tempSupplier,
+    };
+    const response = await postData(endpoints.submitRTV, data);
+    console.log("RTV Response : ", response);
+    if (response === undefined) {
+      alert("RTV qty exceeds total available qty");
+    }
+  }
   async function handleSubmit() {
     const data = {
       id: entryItem.id,
@@ -680,9 +697,7 @@ function ProofOverlay({
       data.supplierId = tempSupplier;
       await postData(endpoints.submitDSD, data);
     } else if (entryItem.type === "RTV") {
-      data.reason = tempReason;
-      data.supplierId = tempSupplier;
-      await postData(endpoints.submitRTV, data);
+      handleRTVSubmit();
     }
 
     navigation.goBack();
